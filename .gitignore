@@ -1,0 +1,15 @@
+# Go
+*.exe
+*.out
+*.test
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Others
+.env
+*.log
+coverage.out
