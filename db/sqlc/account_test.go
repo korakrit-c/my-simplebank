@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v5"
 	"github.com/korakrit-c/my-simplebank/util"
 	"github.com/stretchr/testify/require"
 )
