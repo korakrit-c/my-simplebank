@@ -3,13 +3,11 @@ package db
 import (
 	"context"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-)
-
-const (
-	dbSource = "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable"
+	"github.com/korakrit-c/my-simplebank/util"
 )
 
 var testQueries *Queries
@@ -17,10 +15,13 @@ var testPool *pgxpool.Pool
 var testStore *Store
 
 func TestMain(m *testing.M) {
-	ctx := context.Background()
+	config, err := util.LoadConfig("../..")
+	if err != nil {
+		log.Fatal("cannot load config:", err)
+	}
 
-	var err error
-	testPool, err = pgxpool.New(ctx, dbSource)
+	ctx := context.Background()
+	testPool, err = pgxpool.New(ctx, config.DBSource)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
@@ -28,5 +29,5 @@ func TestMain(m *testing.M) {
 	testQueries = New(testPool)
 	testStore = NewStore(testPool)
 
-	m.Run()
+	os.Exit(m.Run())
 }

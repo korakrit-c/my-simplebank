@@ -7,17 +7,17 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/korakrit-c/my-simplebank/api"
 	db "github.com/korakrit-c/my-simplebank/db/sqlc"
-)
-
-const (
-	dbSource      = "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable"
-	serverAddress = "0.0.0.0:8080"
+	"github.com/korakrit-c/my-simplebank/util"
 )
 
 func main() {
-	ctx := context.Background()
+	config, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatal("cannot load config:", err)
+	}
 
-	conn, err := pgxpool.New(ctx, dbSource)
+	ctx := context.Background()
+	conn, err := pgxpool.New(ctx, config.DBSource)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
@@ -25,8 +25,8 @@ func main() {
 	store := db.NewStore(conn)
 	server := api.NewServer(store)
 
-	err = server.Start(serverAddress)
+	err = server.Start(config.ServerAddress)
 	if err != nil {
-		log.Fatal("cannot start servevr:", err)
+		log.Fatal("cannot start server:", err)
 	}
 }
