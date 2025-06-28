@@ -6,7 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 	db "github.com/korakrit-c/my-simplebank/db/sqlc"
+	"github.com/korakrit-c/my-simplebank/util"
 )
 
 type createAccountRequest struct {
@@ -29,7 +31,14 @@ func (server *Server) createAccount(ctx *gin.Context) {
 
 	account, err := server.store.CreateAccount(ctx, arg)
 	if err != nil {
-		log.Printf("cannot create account: %v\n", err)
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			switch util.PgCodeName(pgErr.Code) {
+			case "unique_violation", "foreign_key_violation":
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			}
+			log.Printf("DB Error: %s (%s)\n", util.PgCodeName(pgErr.Code), pgErr.Code)
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
