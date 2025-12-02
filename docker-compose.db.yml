@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:17.5-alpine
+    container_name: postgres17
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata17:/var/lib/postgresql/data
+
+volumes:
+  pgdata17:
