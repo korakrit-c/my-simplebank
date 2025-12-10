@@ -1,13 +1,34 @@
-FROM golang:1.24-alpine AS builder
+# Build Stage
+FROM golang:1.25-alpine AS builder
+
 WORKDIR /app
+
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o simplebank .
 
-FROM gcr.io/distroless/base-debian12
+COPY . .
+
+RUN go build -o main main.go
+
+
+# Run Stage
+FROM alpine:3.19
+
+# Install CA certificates (needed for HTTPS calls)
+RUN apk --no-cache add ca-certificates
+
 WORKDIR /app
-COPY --from=builder /app/simplebank /app/
-COPY app.env /app/app.env
-EXPOSE 8080
-CMD ["/app/simplebank"]
+
+# Copy built Go binary
+COPY --from=builder /app/main .
+
+# Copy supporting files
+COPY app.env .
+COPY start.sh .
+COPY wait-for.sh .
+COPY db/migration ./db/migration
+
+EXPOSE 8080 9090
+
+ENTRYPOINT ["/app/start.sh"]
+CMD ["/app/main"]

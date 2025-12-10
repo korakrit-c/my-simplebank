@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: simplebank_app
+    # Remove this in first try:
+    # volumes:
+    #   - .:/app
+    working_dir: /app
+    command: ["/app/main"]
+    environment:
+      DB_SOURCE: "postgresql://root:secret@postgres:5432/simple_bank?sslmode=disable"
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"

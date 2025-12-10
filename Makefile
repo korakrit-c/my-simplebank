@@ -1,7 +1,10 @@
 postgres:
-	docker run --replace --name postgres17 -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres:17.5-alpine
+	docker compose -f docker-compose.db.yml up -d
 
-createdb:
+postgres-down:
+	docker compose -f docker-compose.db.yml down
+
+createdb: wait-for-postgres
 	docker exec -it postgres17 createdb --username=root --owner=root simple_bank
 
 dropdb:
@@ -26,9 +29,16 @@ test:
 	go test -v -cover ./...
 
 server:
-	go run main.go
+	docker compose -f docker-compose.db.yml -f docker-compose.app.yml build --no-cache
+	docker compose -f docker-compose.db.yml -f docker-compose.app.yml up -d
 
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/korakrit-c/my-simplebank/db/sqlc Store
-	
-.PHONY: postgres createdb dropdb migrateup migratedown migrateup1 migratedown1 sqlc test server mock
+
+wait-for-postgres:
+	until docker exec postgres17 pg_isready -U root >/dev/null 2>&1; do \
+		echo "Waiting for postgres..."; \
+		sleep 1; \
+	done
+
+.PHONY: postgres postgres-down createdb dropdb migrateup migratedown migrateup1 migratedown1 sqlc test server mock wait-for-postgres
