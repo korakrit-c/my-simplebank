@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:17.5-alpine
+    container_name: simplebank-db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: simple_bank
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d simple_bank"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate
+    container_name: simplebank-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./db/migration:/migrations:ro
+    command:
+      [
+        "-path=/migrations",
+        "-database=postgresql://root:secret@db:5432/simple_bank?sslmode=disable",
+        "up"
+      ]
+    restart: "no"
+
+  api:
+    build: .
+    container_name: simplebank-api
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DB_DRIVER: postgres
+      DB_SOURCE: postgresql://root:secret@db:5432/simple_bank?sslmode=disable
+      SERVER_ADDRESS: 0.0.0.0:8080
+    ports:
+      - "8080:8080"
+    command: ["/app/simplebank"]
+
+volumes:
+  db_data:
