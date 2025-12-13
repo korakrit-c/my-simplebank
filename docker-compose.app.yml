@@ -1,12 +1,9 @@
 services:
-  app:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: simplebank_app
-    # Remove this in first try:
-    # volumes:
-    #   - .:/app
+    container_name: simplebank-api
     working_dir: /app
     command: ["/app/main"]
     environment:
