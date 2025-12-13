@@ -1,17 +1,23 @@
+COMPOSE = docker compose -f docker-compose.yml
+DB_SVC = postgres
+DB_NAME = simple_bank
+DB_USER = root
+
 postgres:
-	docker compose -f docker-compose.db.yml up -d
+	$(COMPOSE) up -d postgres
 
 postgres-down:
-	docker compose -f docker-compose.db.yml down
+	$(COMPOSE) down
 
 createdb: wait-for-postgres
-	docker exec -it postgres17 createdb --username=root --owner=root simple_bank
+	$(COMPOSE) exec -T $(DB_SVC) createdb --username=$(DB_USER) --owner=$(DB_USER) $(DB_NAME)
 
 dropdb:
-	docker exec -it postgres17 dropdb simple_bank
+	$(COMPOSE) exec -T $(DB_SVC) dropdb --if-exists $(DB_NAME)
 
 migrateup:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up
+#	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up
+	$(COMPOSE) up --no-deps --force-recreate migrate
 
 migratedown:
 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose down
@@ -29,14 +35,13 @@ test:
 	go test -v -cover ./...
 
 server:
-	docker compose -f docker-compose.db.yml -f docker-compose.app.yml build --no-cache
-	docker compose -f docker-compose.db.yml -f docker-compose.app.yml up -d
+	$(COMPOSE) up --build -d
 
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/korakrit-c/my-simplebank/db/sqlc Store
 
 wait-for-postgres:
-	until docker exec postgres17 pg_isready -U root >/dev/null 2>&1; do \
+	until $(COMPOSE) exec -T $(DB_SVC) pg_isready -U $(DB_USER) -d $(DB_NAME) >/dev/null 2>&1; do \
 		echo "Waiting for postgres..."; \
 		sleep 1; \
 	done
