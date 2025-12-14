@@ -2,6 +2,11 @@ COMPOSE = docker compose -f docker-compose.yml
 DB_SVC = postgres
 DB_NAME = simple_bank
 DB_USER = root
+DB_PASSWORD ?= secret
+DB_HOST ?= localhost
+DB_PORT ?= 5432
+
+DB_SOURCE ?= postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable
 
 postgres:
 	$(COMPOSE) up -d postgres
@@ -16,17 +21,20 @@ dropdb:
 	$(COMPOSE) exec -T $(DB_SVC) dropdb --if-exists $(DB_NAME)
 
 migrateup:
-#	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up
-	$(COMPOSE) up --no-deps --force-recreate migrate
+	@if command -v migrate >/dev/null 2>&1; then \
+		migrate -path db/migration -database "$(DB_SOURCE)" -verbose up; \
+	else \
+		$(COMPOSE) up --no-deps --force-recreate migrate; \
+	fi
 
 migratedown:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose down
+	migrate -path db/migration -database "$(DB_SOURCE)" -verbose down
 
 migrateup1:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose up 1
+	migrate -path db/migration -database "$(DB_SOURCE)" -verbose up 1
 
 migratedown1:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose down 1
+	migrate -path db/migration -database "$(DB_SOURCE)" -verbose down 1
 
 sqlc:
 	sqlc generate
