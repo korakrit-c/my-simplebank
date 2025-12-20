@@ -32,4 +32,4 @@ jobs:
           push: true
           tags: |
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
-            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ github.ref_name }}
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ github.ref_name == 'main' && 'main' || github.ref_name == 'dev' && 'dev' || 'ci' }}
