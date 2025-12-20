@@ -2,7 +2,10 @@ name: Build Image
 
 on:
   push:
-    branches: ["main", "dev"]
+    branches:
+      - main
+      - dev
+      - ci/build-workflow
 
 jobs:
   build:
