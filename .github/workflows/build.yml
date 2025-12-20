@@ -1,0 +1,32 @@
+name: Build Image
+
+on:
+  push:
+    branches: ["main", "dev"]
+
+jobs:
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_REGISTRY: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKER_REPOSITORY: my-simplebank
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build, tag, and push image to DockerHub
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: |
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ github.ref_name }}
